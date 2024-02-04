@@ -3,7 +3,7 @@
 if CLIENT then
 
 	CreateClientConVar("infmap_supernoclip_enable", 0, true, true, "enables/disables the supernoclip mode", 0, 1 )
-	CreateClientConVar("infmap_supernoclip_speedmultipler", 0, true, true, "Sets the noclip speed multipler. Higher = faster. Shift/Ctrl speeds are adjusted accordingly.", 1 )
+	CreateClientConVar("infmap_supernoclip_speedmultipler", 1, true, true, "Sets the noclip speed multipler. Higher = faster. Shift/Ctrl speeds are adjusted accordingly.", 1 )
 
 end
 
@@ -34,6 +34,7 @@ hook.Add("Tick", "InfMap_SuperNoclip_Tick", function()
 		for k, ply in ipairs(player.GetHumans()) do
 			if ply:GetInfoNum( "infmap_supernoclip_enable", 0 ) == 0 then continue end
 			if not NoClipPlayers[ply:SteamID()] then continue end -- only noclip players
+			if not ply:Alive() then NoClipPlayers[ply:SteamID()] = nil continue end
 
 			local CurPos = ply:GetPos()
 			local Dir = ply:GetVelocity():GetNormalized()
@@ -54,7 +55,6 @@ hook.Add("Tick", "InfMap_SuperNoclip_Tick", function()
 			end
 
 			if W or A or S or D or Space then
-				print(ply:GetPhysicsObject())
 				ply:SetPos( CurPos + Dir * Power )
 			end
 		end
@@ -63,10 +63,11 @@ hook.Add("Tick", "InfMap_SuperNoclip_Tick", function()
 		local ply = LocalPlayer()
 		if GetConVar("infmap_supernoclip_enable"):GetInt() == 0 then return end
 		if not ply.InfMapIsOnNoclip then return end -- only noclip players
+		if not ply:Alive() then ply.InfMapIsOnNoclip = nil return end
 
 		local CurPos = ply:GetPos()
 		local Dir = ply:GetVelocity():GetNormalized()
-		local Power = GetConVar("infmap_supernoclip_speedmultipler"):GetInt() -- 10000000000
+		local Power = GetConVar("infmap_supernoclip_speedmultipler"):GetInt()
 
 		local W = ply:KeyDown(IN_FORWARD)
 		local A = ply:KeyDown(IN_MOVELEFT)
