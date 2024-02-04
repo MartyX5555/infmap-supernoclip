@@ -14,6 +14,6 @@ The GMOD noclip is not really suitable for this task, since it has a speed limit
 
 ## Installation
 
-You can quickly get the addon via the workshop
+You can quickly get the addon via [the workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3153457483)
 
 ## Warning: This system has no prediction due to how it works!!! meaning while in multiplayer, a high ping may affect completely the usage of this. Make sure to use it only in singleplayer or stable multiplayer connections!
