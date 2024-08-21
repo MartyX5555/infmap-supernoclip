@@ -4,7 +4,7 @@ if CLIENT then
 
 	CreateClientConVar("infmap_supernoclip_enable", 0, true, true, "enables/disables the supernoclip mode", 0, 1 )
 	CreateClientConVar("infmap_supernoclip_speedmultipler", 1, true, true, "Sets the noclip speed multipler. Higher = faster. Shift/Ctrl speeds are adjusted accordingly.", 1 )
-
+	CreateClientConVar("infmap_supernoclip_inheritspeed", 0, true, true, "enables/disables if the noclip speed should be inherited to the player once he leaves the noclip. WARNING: THIS IS TRULY UNRELIABLE WITH A 750+ MULTIPLER!!!", 0, 1)
 end
 
 local NoClipPlayers = {}
@@ -25,10 +25,15 @@ hook.Add( "PlayerNoClip", "InfMap_SuperNoclip_Checker", function( ply, desiredNo
 			ply.InfMapIsOnNoclip = desiredNoClipState
 		end
 	end
-
 end )
 
 hook.Add("Tick", "InfMap_SuperNoclip_Tick", function()
+
+	-- Clamp the multipler to sublight speeds, if the map is NOT infinite. Avoids engine breaking the noclip if too high
+	local MultLimit = math.huge
+	if not string.StartsWith(game.GetMap(), "gm_infmap") then
+		MultLimit = 1000
+	end
 
 	if SERVER then
 		for k, ply in ipairs(player.GetHumans()) do
@@ -38,7 +43,7 @@ hook.Add("Tick", "InfMap_SuperNoclip_Tick", function()
 
 			local CurPos = ply:GetPos()
 			local Dir = ply:GetVelocity():GetNormalized()
-			local Power = ply:GetInfoNum( "infmap_supernoclip_speedmultipler", 1 ) -- 10000000000
+			local Power = math.min(ply:GetInfoNum( "infmap_supernoclip_speedmultipler", 1 ), MultLimit) -- 10000000000
 
 			local W = ply:KeyDown(IN_FORWARD)
 			local A = ply:KeyDown(IN_MOVELEFT)
@@ -54,12 +59,16 @@ hook.Add("Tick", "InfMap_SuperNoclip_Tick", function()
 				Power = Power / 5
 			end
 
+			local NextPos = CurPos + Dir * Power
 			if W or A or S or D or Space then
-				ply:SetPos( CurPos + Dir * Power )
+				ply:SetPos( NextPos )
 			end
+
+			-- Player Velocity calculation
+			ply.NoclipVelocity = (NextPos - CurPos) / FrameTime()
 		end
 	else
-
+		 -- for prediction purposes
 		local ply = LocalPlayer()
 		if GetConVar("infmap_supernoclip_enable"):GetInt() == 0 then return end
 		if not ply.InfMapIsOnNoclip then return end -- only noclip players
@@ -67,7 +76,7 @@ hook.Add("Tick", "InfMap_SuperNoclip_Tick", function()
 
 		local CurPos = ply:GetPos()
 		local Dir = ply:GetVelocity():GetNormalized()
-		local Power = GetConVar("infmap_supernoclip_speedmultipler"):GetInt()
+		local Power = math.min(GetConVar("infmap_supernoclip_speedmultipler"):GetFloat(), MultLimit)  -- 10000000000
 
 		local W = ply:KeyDown(IN_FORWARD)
 		local A = ply:KeyDown(IN_MOVELEFT)
@@ -82,11 +91,24 @@ hook.Add("Tick", "InfMap_SuperNoclip_Tick", function()
 		elseif Ctrl then
 			Power = Power / 5
 		end
-
+		-- Player Velocity calculation
 		if W or A or S or D or Space then
-			ply:SetPos( CurPos + Dir * Power ) -- for prediction purposes
+			ply:SetPos( CurPos + Dir * Power )
 		end
-
 	end
 
 end)
+
+-- Controls exit velocity
+hook.Remove("Move", "InfMap_SuperNoclip_Move")
+hook.Add( "Move", "InfMap_SuperNoclip_Move", function( ply, mv, usrcmd )
+	if not SERVER then return end
+	if ply:GetInfoNum( "infmap_supernoclip_enable", 0 ) == 0 then return end
+	if ply:GetInfoNum( "infmap_supernoclip_inheritspeed", 0) == 0 then return end
+	if NoClipPlayers[ply:SteamID()] then return end
+	if not isvector(ply.NoclipVelocity) then return end
+
+	mv:SetVelocity( ply.NoclipVelocity )
+	ply.NoclipVelocity = nil
+
+end )
