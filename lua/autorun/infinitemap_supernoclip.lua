@@ -40,6 +40,7 @@ hook.Add("Tick", "InfMap_SuperNoclip_Tick", function()
 			if ply:GetInfoNum( "infmap_supernoclip_enable", 0 ) == 0 then continue end
 			if not NoClipPlayers[ply:SteamID()] then continue end -- only noclip players
 			if not ply:Alive() then NoClipPlayers[ply:SteamID()] = nil continue end
+			if ply:InVehicle() then continue end -- yes, for some reason, it could noclip while seated
 
 			local CurPos = ply:GetPos()
 			local Dir = ply:GetVelocity():GetNormalized()
@@ -73,6 +74,7 @@ hook.Add("Tick", "InfMap_SuperNoclip_Tick", function()
 		if GetConVar("infmap_supernoclip_enable"):GetInt() == 0 then return end
 		if not ply.InfMapIsOnNoclip then return end -- only noclip players
 		if not ply:Alive() then ply.InfMapIsOnNoclip = nil return end
+		if ply:InVehicle() then return end -- yes, for some reason, it could noclip while seated
 
 		local CurPos = ply:GetPos()
 		local Dir = ply:GetVelocity():GetNormalized()
