@@ -39,8 +39,7 @@ hook.Add("Tick", "InfMap_SuperNoclip_Tick", function()
 		for k, ply in ipairs(player.GetHumans()) do
 			if ply:GetInfoNum( "infmap_supernoclip_enable", 0 ) == 0 then continue end
 			if not NoClipPlayers[ply:SteamID()] then continue end -- only noclip players
-			if not ply:Alive() then NoClipPlayers[ply:SteamID()] = nil continue end
-			if ply:InVehicle() then NoClipPlayers[ply:SteamID()] = nil continue end -- yes, for some reason, it could noclip while seated
+			if not ply:Alive() or ply:InVehicle() then NoClipPlayers[ply:SteamID()] = nil continue end -- yes, for some reason, it could noclip while seated
 
 			local CurPos = ply:GetPos()
 			local Dir = ply:GetVelocity():GetNormalized()
@@ -69,12 +68,11 @@ hook.Add("Tick", "InfMap_SuperNoclip_Tick", function()
 			ply.NoclipVelocity = (NextPos - CurPos) / FrameTime()
 		end
 	else
-		 -- for prediction purposes
+		-- for prediction purposes
 		local ply = LocalPlayer()
 		if GetConVar("infmap_supernoclip_enable"):GetInt() == 0 then return end
 		if not ply.InfMapIsOnNoclip then return end -- only noclip players
-		if not ply:Alive() then ply.InfMapIsOnNoclip = nil return end
-		if ply:InVehicle() then ply.InfMapIsOnNoclip = nil return end -- yes, for some reason, it could noclip while seated
+		if not ply:Alive() or ply:InVehicle() then ply.InfMapIsOnNoclip = nil return end -- yes, for some reason, it could noclip while seated
 
 		local CurPos = ply:GetPos()
 		local Dir = ply:GetVelocity():GetNormalized()
@@ -93,9 +91,11 @@ hook.Add("Tick", "InfMap_SuperNoclip_Tick", function()
 		elseif Ctrl then
 			Power = Power / 5
 		end
+
 		-- Player Velocity calculation
+		local NextPos = CurPos + Dir * Power
 		if W or A or S or D or Space then
-			ply:SetPos( CurPos + Dir * Power )
+			ply:SetPos( NextPos )
 		end
 	end
 
